@@ -1,0 +1,603 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUsers {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  email               String                @unique
+  password            String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  Organization        Organization[]
+  OrganizationMembers OrganizationMembers[]
+}
+
+model OrganizationMembers {
+  id             Int          @id @default(autoincrement())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId Int
+  member         AdminUsers   @relation(fields: [memberId], references: [id])
+  memberId       Int
+  role           String
+  createdAt      DateTime     @default(now())
+}
+
+model Organization {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  description         String
+  creatorId           Int
+  creator             AdminUsers            @relation(fields: [creatorId], references: [id])
+  createdAt           DateTime              @default(now())
+  OrganizationMembers OrganizationMembers[]
+  Branch              Branch[]
+  WareHouse           WareHouse[]
+  ProductUnits        ProductUnits[]
+  productGroups       productGroups[]
+  Product             Product[]
+  Supplier            Supplier[]
+  Customers           Customers[]
+  PurchaseRequisition PurchaseRequisition[]
+  PurchaseOrder       PurchaseOrder[]
+  PurchaseChallan     PurchaseChallan[]
+  PurchaseInvoice     PurchaseInvoice[]
+  StockProduct        StockProduct[]
+  RetuenProduct       RetuenProduct[]
+  Quotation           Quotation[]
+  SalesOrder          SalesOrder[]
+  SalesChallan        SalesChallan[]
+  SalesInvoice        SalesInvoice[]
+  OpeningBalance      OpeningBalance[]
+  SealsReturn         SealsReturn[]
+  DamagedProduct      DamagedProduct[]
+}
+
+model Branch {
+  id              Int               @id @default(autoincrement())
+  name            String
+  location        String
+  organization    Organization      @relation(fields: [organizationId], references: [id])
+  organizationId  Int
+  createdAt       DateTime          @default(now())
+  WareHouse       WareHouse[]
+  PurchaseOrder   PurchaseOrder[]
+  PurchaseChallan PurchaseChallan[]
+  PurchaseInvoice PurchaseInvoice[]
+  RetuenProduct   RetuenProduct[]
+  Quotation       Quotation[]
+  SalesOrder      SalesOrder[]
+  SalesChallan    SalesChallan[]
+  SalesInvoice    SalesInvoice[]
+  SealsReturn     SealsReturn[]
+}
+
+model WareHouse {
+  id       Int    @id @default(autoincrement())
+  name     String
+  location String
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  orgId        Int
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  createdAt       DateTime          @default(now())
+  PurchaseOrder   PurchaseOrder[]
+  PurchaseChallan PurchaseChallan[]
+  PurchaseInvoice PurchaseInvoice[]
+  RetuenProduct   RetuenProduct[]
+  SalesOrder      SalesOrder[]
+  SalesChallan    SalesChallan[]
+  SalesInvoice    SalesInvoice[]
+  SealsReturn     SealsReturn[]
+  DamagedProduct  DamagedProduct[]
+}
+
+model ProductUnits {
+  id          Int    @id @default(autoincrement())
+  name        String
+  description String
+
+  orgId        Int
+  organization Organization @relation(fields: [orgId], references: [id])
+  createdAt    DateTime     @default(now())
+  Product      Product[]
+}
+
+model productGroups {
+  id   Int    @id @default(autoincrement())
+  code String
+  name String
+
+  orgId        Int
+  organization Organization @relation(fields: [orgId], references: [id])
+  createdAt    DateTime     @default(now())
+  Product      Product[]
+
+  @@unique([code, orgId])
+}
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  itemCode    String
+  name        String
+  description String?
+
+  unitId  Int
+  unit    ProductUnits  @relation(fields: [unitId], references: [id])
+  groupId Int
+  group   productGroups @relation(fields: [groupId], references: [id])
+
+  orgId                    Int
+  organization             Organization               @relation(fields: [orgId], references: [id])
+  createdAt                DateTime                   @default(now())
+  PurchaseRequisitionItems PurchaseRequisitionItems[]
+  PurchaseOrderItems       PurchaseOrderItems[]
+  PurchaseChallanItems     PurchaseChallanItems[]
+  PurchaseInvoiceItem      PurchaseInvoiceItem[]
+  StockProduct             StockProduct[]
+  ReturnItems              ReturnItems[]
+  QuotationItems           QuotationItems[]
+  SalesOrderItems          SalesOrderItems[]
+  SalesChallanItems        SalesChallanItems[]
+  SalesInvoiceItems        SalesInvoiceItems[]
+  SealsReturnItems         SealsReturnItems[]
+  OpeningBalanceItem       OpeningBalanceItem[]
+  DamagedProduct           DamagedProduct[]
+
+  @@unique([itemCode, orgId])
+}
+
+model Supplier {
+  id      Int     @id @default(autoincrement())
+  code    String
+  name    String
+  email   String?
+  phone   String
+  address String
+  note    String?
+
+  orgId           Int
+  organization    Organization      @relation(fields: [orgId], references: [id])
+  createdAt       DateTime          @default(now())
+  PurchaseOrder   PurchaseOrder[]
+  PurchaseChallan PurchaseChallan[]
+  PurchaseInvoice PurchaseInvoice[]
+  RetuenProduct   RetuenProduct[]
+  Quotation       Quotation[]
+}
+
+model Customers {
+  id      Int     @id @default(autoincrement())
+  code    String
+  name    String
+  address String
+  email   String?
+  phone   String
+  note    String?
+
+  orgId        Int
+  organization Organization   @relation(fields: [orgId], references: [id])
+  createdAt    DateTime       @default(now())
+  SalesOrder   SalesOrder[]
+  SalesInvoice SalesInvoice[]
+  SealsReturn  SealsReturn[]
+}
+
+model PurchaseRequisitionItems {
+  id            Int                 @id @default(autoincrement())
+  productId     Int
+  product       Product             @relation(fields: [productId], references: [id])
+  quantity      Int
+  remarks       String?
+  requisitionId Int
+  requisition   PurchaseRequisition @relation(fields: [requisitionId], references: [id])
+}
+
+model PurchaseRequisition {
+  id                       Int                        @id @default(autoincrement())
+  no                       String
+  description              String?
+  post                     Boolean?
+  reqDate                  DateTime
+  isOrdered                Boolean?
+  orgId                    Int
+  organization             Organization               @relation(fields: [orgId], references: [id])
+  PurchaseRequisitionItems PurchaseRequisitionItems[]
+}
+
+model PurchaseOrderItems {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  rate      Float
+
+  batchNo String?
+
+  remarks       String?
+  purchaseId    Int
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseId], references: [id])
+}
+
+model PurchaseOrder {
+  id          Int      @id @default(autoincrement())
+  orderNo     String
+  description String?
+  post        Boolean?
+  orderDate   DateTime
+  dueDate     DateTime
+
+  isOrderd Boolean @default(false)
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  warehouseId Int
+  warehouse   WareHouse @relation(fields: [warehouseId], references: [id])
+
+  supplierId Int
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  suppingAddress String
+  remarks        String?
+
+  orgId              Int
+  organization       Organization         @relation(fields: [orgId], references: [id])
+  PurchaseOrderItems PurchaseOrderItems[]
+}
+
+model PurchaseChallanItems {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  rate      Float
+
+  batchNo String?
+
+  remarks String?
+
+  challanId       Int
+  purchaseChallan PurchaseChallan @relation(fields: [challanId], references: [id])
+}
+
+model PurchaseChallan {
+  id             Int      @id @default(autoincrement())
+  challanNo      String
+  post           Boolean?
+  challanDate    DateTime
+  challanDueDate DateTime
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  warehouseId Int
+  warehouse   WareHouse @relation(fields: [warehouseId], references: [id])
+
+  supplierId Int
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  suppingAddress String
+  remarks        String?
+
+  orgId                Int
+  organization         Organization           @relation(fields: [orgId], references: [id])
+  PurchaseChallanItems PurchaseChallanItems[]
+}
+
+model PurchaseInvoiceItem {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  qeuntity  Int
+  rate      Float
+  discount  Float
+  batch     String?
+  remarks   String?
+
+  invoiceId       Int
+  purchaseInvoice PurchaseInvoice @relation(fields: [invoiceId], references: [id])
+}
+
+model PurchaseInvoice {
+  id          Int      @id @default(autoincrement())
+  invoiceNo   String
+  invoiceDate DateTime
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  warehouseId Int
+  warehouse   WareHouse @relation(fields: [warehouseId], references: [id])
+
+  supplierId Int
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  address             String
+  remarks             String?
+  PurchaseInvoiceItem PurchaseInvoiceItem[]
+
+  orgId        Int
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model StockProduct {
+  id           Int          @id @default(autoincrement())
+  productId    Int
+  product      Product      @relation(fields: [productId], references: [id])
+  quantity     Int
+  rate         Float
+  remarks      String?
+  orgId        Int
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model ReturnItems {
+  id            Int           @id @default(autoincrement())
+  productId     Int
+  product       Product       @relation(fields: [productId], references: [id])
+  quantity      Int
+  batch         String?
+  rate          Float
+  returnId      Int
+  returnProduct RetuenProduct @relation(fields: [returnId], references: [id])
+}
+
+model RetuenProduct {
+  id Int @id @default(autoincrement())
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  warehouseId Int
+  warehouse   WareHouse @relation(fields: [warehouseId], references: [id])
+  supplierId  Int
+  supplier    Supplier  @relation(fields: [supplierId], references: [id])
+
+  returnDate DateTime
+  dueDate    DateTime
+  remarks    String?
+
+  quantity     Int
+  rate         Float
+  orgId        Int
+  organization Organization  @relation(fields: [orgId], references: [id])
+  ReturnItems  ReturnItems[]
+}
+
+model QuotationItems {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  remarks   String?
+
+  quotationId Int
+  quotation   Quotation @relation(fields: [quotationId], references: [id])
+}
+
+model Quotation {
+  id                    Int      @id @default(autoincrement())
+  quotationDate         DateTime
+  dueDate               DateTime
+  delivery              String
+  support_warranty      String
+  validity_of_quotation String
+  payment               String
+  others                String?
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  supplierId Int
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  suppingAddress String
+  remarks        String?
+
+  orgId          Int
+  organization   Organization     @relation(fields: [orgId], references: [id])
+  QuotationItems QuotationItems[]
+}
+
+model SalesOrderItems {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  rate      Float
+
+  orderId    Int
+  salesOrder SalesOrder @relation(fields: [orderId], references: [id])
+}
+
+model SalesOrder {
+  id           Int      @id @default(autoincrement())
+  orderNo      String
+  orderDate    DateTime
+  deliveryDate DateTime
+
+  warehouseId Int
+  warehouse   WareHouse @relation(fields: [warehouseId], references: [id])
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  customerId Int
+  customer   Customers @relation(fields: [customerId], references: [id])
+
+  address       String
+  contactPerson String
+  contactNumber String
+  remarks       String?
+
+  placeOfDelivery String
+
+  orgId           Int
+  organization    Organization      @relation(fields: [orgId], references: [id])
+  SalesOrderItems SalesOrderItems[]
+}
+
+model SalesChallanItems {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  remarks   String?
+
+  challanId    Int
+  salesChallan SalesChallan @relation(fields: [challanId], references: [id])
+}
+
+model SalesChallan {
+  id          Int      @id @default(autoincrement())
+  challanDate DateTime
+  dueDate     DateTime
+  challanNo   String
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  warehouseId Int
+  warehouse   WareHouse @relation(fields: [warehouseId], references: [id])
+
+  contactPerson String
+  contactNumber String
+
+  address     String
+  designation String
+  remarks     String?
+
+  paleOfDelivery String
+
+  poNo   String
+  poDate DateTime
+
+  driverName         String
+  driverPhone        String
+  transportationMode String
+  vehicleNo          String
+
+  orgId             Int
+  organization      Organization        @relation(fields: [orgId], references: [id])
+  SalesChallanItems SalesChallanItems[]
+}
+
+model SalesInvoiceItems {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  rate      Float
+  discount  Float
+
+  batchNo String?
+
+  remarks String?
+
+  invoiceId    Int
+  salesInvoice SalesInvoice @relation(fields: [invoiceId], references: [id])
+}
+
+model SalesInvoice {
+  id        Int    @id @default(autoincrement())
+  invoiceNo String
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  invoiceDate  DateTime
+  deliveryDate DateTime
+
+  warehouseId Int
+  warehouse   WareHouse @relation(fields: [warehouseId], references: [id])
+
+  customerId Int
+  customer   Customers @relation(fields: [customerId], references: [id])
+
+  address          String
+  exclusiveContact String
+  remarks          String?
+
+  orgId        Int
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  SalesInvoiceItems SalesInvoiceItems[]
+}
+
+model SealsReturnItems {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  rate      Float
+
+  returnId    Int
+  salesReturn SealsReturn @relation(fields: [returnId], references: [id])
+}
+
+model SealsReturn {
+  id              Int      @id @default(autoincrement())
+  salesReturnNo   String
+  salesReturnDate DateTime
+  dueDate         DateTime
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  warehouseId Int
+  warehouse   WareHouse @relation(fields: [warehouseId], references: [id])
+
+  customerId Int
+  customer   Customers @relation(fields: [customerId], references: [id])
+
+  address          String
+  remarks          String?
+  SealsReturnItems SealsReturnItems[]
+  orgId            Int
+  organization     Organization       @relation(fields: [orgId], references: [id])
+}
+
+model OpeningBalanceItem {
+  id               Int            @id @default(autoincrement())
+  productId        Int
+  product          Product        @relation(fields: [productId], references: [id])
+  quantity         Int
+  rate             Float
+  remarks          String?
+  OpeningBalance   OpeningBalance @relation(fields: [openingBalanceId], references: [id])
+  openingBalanceId Int
+}
+
+model OpeningBalance {
+  id                 Int                  @id @default(autoincrement())
+  opningBalanceId    String
+  orgId              Int
+  remarks            String?
+  organization       Organization         @relation(fields: [orgId], references: [id])
+  OpeningBalanceItem OpeningBalanceItem[]
+  createdAt          DateTime             @default(now())
+}
+
+model DamagedProduct {
+  id           Int          @id @default(autoincrement())
+  productId    Int
+  product      Product      @relation(fields: [productId], references: [id])
+  quantity     Int
+  rate         Float
+  remarks      String?
+  createdAt    DateTime     @default(now())
+  warehouseId  Int
+  warehouse    WareHouse    @relation(fields: [warehouseId], references: [id])
+  orgId        Int
+  organization Organization @relation(fields: [orgId], references: [id])
+}
